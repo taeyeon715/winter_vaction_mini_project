@@ -1,0 +1,33 @@
+---
+alwaysApply: true
+---
+
+description: V-Hub 프로젝트의 전체적인 UI 디자인 시스템 및 Tailwind CSS 스타일 가이드
+globs: src/app/**/*.{tsx,jsx}, src/components/**/*.{tsx,jsx}
+alwaysApply: true
+---
+
+# UI & Style Rules
+
+## 1. Brand Identity & Colors
+- **Point Color:** 모든 핵심 UI 요소(버튼, 활성화 상태, 아이콘 등)에는 코랄 컬러(`#F87171`)를 사용한다. 
+  - Tailwind 예시: `text-[#F87171]`, `bg-[#F87171]`, `border-[#F87171]`
+- **Background:** 기본 배경색은 부드러운 아이보리 계열인 `#FAFAFA`를 유지한다.
+- **Tone & Manner:** 깨끗하고 신뢰감 있는 인터페이스를 지향하며, 가독성을 최우선으로 한다.
+
+## 2. Component Strategy (Shadcn UI)
+- 모든 기본 컴포넌트(Button, Card, Input, Dialog 등)는 `Shadcn UI`를 기반으로 작성한다.
+- 새로운 UI 요소를 만들 때는 직접 스타일링하기보다 `src/components/ui`에 있는 기존 컴포넌트를 우선 활용한다.
+- **Sidebar:** 반응형 사이드바 레이아웃을 사용하여 모바일 환경에서의 업로드 접근성을 보장한다.
+
+## 3. Animations (Framer Motion)
+- **Realtime Dashboard:** 대시보드의 숫자가 변할 때 반드시 `Framer Motion`을 사용하여 부드러운 Count-up 효과를 구현한다.
+- **Interactions:** 버튼 클릭이나 페이지 전환 시 과하지 않은 트랜지션(0.2s duration)을 추가하여 생동감을 준다.
+
+## 4. Responsive Design
+- 모바일 우선(Mobile-First) 접근 방식을 취한다.
+- 특히 '봉사 활동 인증(업로드)' 화면은 현장에서 휴대폰으로 작업하는 단원들을 위해 버튼 크기를 충분히 크게 설계한다.
+
+## 5. Typography
+- 제목과 본문의 위계를 명확히 한다. 
+- 대시보드의 '누적 봉사 시간'과 같은 핵심 수치는 볼드(Bold) 처리를 통해 시각적 임팩트를 준다.

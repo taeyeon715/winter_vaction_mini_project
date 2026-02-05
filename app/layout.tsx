@@ -4,12 +4,14 @@ import { Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
 import { AuthProvider } from '@/lib/auth-context'
+import { Header } from '@/components/common/Header'
+import { Footer } from '@/components/common/Footer'
 import './globals.css'
 
 const _inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'V-Hub | Volunteer Impact Platform',
+  title: '각자 | Volunteer Impact Platform',
   description: 'Visualize and track volunteer impact in real-time. Manage programs, log activities, and celebrate community contributions.',
   generator: 'v0.app',
   icons: {
@@ -41,10 +43,14 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="ko">
       <body className={`font-sans antialiased`}>
         <AuthProvider>
-          {children}
+          <div className="flex min-h-screen flex-col">
+            <Header />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </div>
           <Toaster position="top-right" richColors />
           <Analytics />
         </AuthProvider>

@@ -1,0 +1,36 @@
+---
+alwaysApply: true
+---
+---
+description: _mockup 폴더 관리 및 빌드 격리 원칙
+globs: **/*.{ts,tsx,js,jsx}
+---
+
+# _mockup 폴더 관리 및 빌드 격리 원칙
+
+## 핵심 원칙
+
+1. **_mockup 폴더는 오직 v0에서 가져온 소스 코드를 보관하는 '참고용(Reference Only)' 공간이다.**
+   - 이 폴더의 코드는 프로젝트의 실제 구현 코드가 아니다.
+   - 단순히 참고 자료로만 사용되어야 한다.
+
+2. **직접 import 금지**
+   - 어떠한 경우에도 `app/` 또는 `components/` 폴더 내의 파일에서 `_mockup/` 폴더의 파일을 직접 import 해서는 안 된다.
+   - 예: `import Something from '@/../_mockup/...'` ❌
+   - 예: `import Something from '../_mockup/...'` ❌
+
+3. **재해석 및 재작성 필수**
+   - 기능을 구현할 때는 `_mockup` 폴더의 코드를 컨텍스트로 읽고, 이를 Next.js 프로젝트 구조(App Router)에 맞게 재해석하여 `app/` 또는 `components/` 폴더에 **새로 작성(Refactoring)**해야 한다.
+   - `_mockup` 폴더의 코드를 복사-붙여넣기하지 말 것.
+   - Next.js App Router의 구조와 컨벤션에 맞게 완전히 새로 작성할 것.
+
+4. **빌드 격리 인지**
+   - `_mockup` 폴더는 `tsconfig.json`과 `.eslintignore`에서 이미 제외되어 있으므로, AI는 이 폴더의 소스가 프로젝트 전체 타입 시스템에 영향을 주지 않는다는 점을 인지해야 한다.
+   - 빌드 시 이 폴더의 파일들은 타입 체크 및 린트 검사 대상에서 완전히 제외된다.
+
+## 작업 흐름
+
+1. `_mockup` 폴더의 코드를 참고하여 기능 요구사항을 파악한다.
+2. Next.js App Router 구조에 맞게 설계를 재구성한다.
+3. `app/` 또는 `components/` 폴더에 새로운 파일을 생성하여 구현한다.
+4. `_mockup` 폴더의 코드를 직접 참조하지 않고, 독립적으로 작동하는 코드를 작성한다.
