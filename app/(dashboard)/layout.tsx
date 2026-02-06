@@ -17,10 +17,10 @@ function DashboardLayoutContent({
   const router = useRouter()
 
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (!isLoading && !user?.id) {
       router.push("/login")
     }
-  }, [user, isLoading, router])
+  }, [user?.id, isLoading]) // router는 안정적이므로 제거 가능
 
   if (isLoading) {
     return (

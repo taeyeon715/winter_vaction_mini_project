@@ -72,7 +72,6 @@ export function VolunteerProvider({ children }: { children: React.ReactNode }) {
   const [activities, setActivities] = useState<Activity[]>([])
   const [programs, setPrograms] = useState<Program[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const supabase = getSupabaseClient()
 
   // 통계 계산 (메모이제이션)
   const { totalHours, totalVolunteers } = useMemo(() => {
@@ -88,6 +87,7 @@ export function VolunteerProvider({ children }: { children: React.ReactNode }) {
   // 활동 목록 조회
   const fetchActivities = useCallback(async (limit?: number) => {
     try {
+      const supabase = getSupabaseClient();
       let query = supabase
         .from('activities')
         .select(`
@@ -116,11 +116,12 @@ export function VolunteerProvider({ children }: { children: React.ReactNode }) {
       console.error('활동 목록 조회 중 오류:', error)
       return []
     }
-  }, [supabase])
+  }, [])
 
   // 프로그램 목록 조회
   const fetchPrograms = useCallback(async () => {
     try {
+      const supabase = getSupabaseClient();
       const { data: programsData, error: programsError } = await supabase
         .from('programs')
         .select('*')
@@ -157,10 +158,12 @@ export function VolunteerProvider({ children }: { children: React.ReactNode }) {
       console.error('프로그램 목록 조회 중 오류:', error)
       return []
     }
-  }, [supabase])
+  }, [])
 
-  // 초기 데이터 로드
+  // 초기 데이터 로드 (한 번만 실행)
   useEffect(() => {
+    let mounted = true;
+
     async function loadInitialData() {
       setIsLoading(true)
       try {
@@ -168,22 +171,31 @@ export function VolunteerProvider({ children }: { children: React.ReactNode }) {
           fetchActivities(),
           fetchPrograms(),
         ])
-        setActivities(activitiesData)
-        setPrograms(programsData)
+        if (mounted) {
+          setActivities(activitiesData)
+          setPrograms(programsData)
+        }
       } catch (error) {
         console.error('초기 데이터 로드 실패:', error)
       } finally {
-        setIsLoading(false)
+        if (mounted) {
+          setIsLoading(false)
+        }
       }
     }
 
     loadInitialData()
-  }, [fetchActivities, fetchPrograms])
+
+    return () => {
+      mounted = false;
+    };
+  }, []) // 빈 배열로 한 번만 실행
 
   // Realtime 구독 설정
   useEffect(() => {
-    if (!user) return
+    if (!user?.id) return
 
+    const supabase = getSupabaseClient();
     const channel = supabase
       .channel('activities-channel')
       .on(
@@ -219,15 +231,16 @@ export function VolunteerProvider({ children }: { children: React.ReactNode }) {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [user, supabase])
+  }, [user?.id]) // user.id만 의존성으로 사용
 
   // 활동 추가 함수
   const addActivity = useCallback(
     async (programId: string, hours: number, content: string, imageFile?: File) => {
-      if (!user) {
+      if (!user?.id) {
         throw new Error('로그인이 필요합니다.')
       }
 
+      const supabase = getSupabaseClient();
       let imageUrl: string | null = null
 
       try {
@@ -278,13 +291,13 @@ export function VolunteerProvider({ children }: { children: React.ReactNode }) {
         throw error
       }
     },
-    [user, supabase]
+    [user?.id]
   )
 
   // 프로그램 추가 함수
   const addProgram = useCallback(
     async (title: string, description: string, thumbnailFile?: File) => {
-      if (!user) {
+      if (!user?.id) {
         throw new Error('로그인이 필요합니다.')
       }
 
@@ -293,6 +306,7 @@ export function VolunteerProvider({ children }: { children: React.ReactNode }) {
         throw new Error('프로그램을 생성할 권한이 없습니다. 관리자 계정으로 로그인해주세요. 프로필 페이지에서 관리자 권한을 부여받을 수 있습니다.')
       }
       
+      const supabase = getSupabaseClient();
       let thumbnailUrl: string | null = null
 
       try {
@@ -344,13 +358,13 @@ export function VolunteerProvider({ children }: { children: React.ReactNode }) {
         throw error
       }
     },
-    [user, supabase]
+    [user?.id, user?.role]
   )
 
   // 프로그램 수정 함수
   const updateProgram = useCallback(
     async (programId: string, title: string, description: string, thumbnailFile?: File) => {
-      if (!user) {
+      if (!user?.id) {
         throw new Error('로그인이 필요합니다.')
       }
 
@@ -359,6 +373,7 @@ export function VolunteerProvider({ children }: { children: React.ReactNode }) {
         throw new Error('프로그램을 수정할 권한이 없습니다. 관리자 계정으로 로그인해주세요.')
       }
 
+      const supabase = getSupabaseClient();
       let thumbnailUrl: string | undefined = undefined
 
       try {
@@ -408,13 +423,13 @@ export function VolunteerProvider({ children }: { children: React.ReactNode }) {
         throw error
       }
     },
-    [user, supabase]
+    [user?.id, user?.role]
   )
 
   // 프로그램 삭제 함수
   const deleteProgram = useCallback(
     async (programId: string) => {
-      if (!user) {
+      if (!user?.id) {
         throw new Error('로그인이 필요합니다.')
       }
 
@@ -423,21 +438,23 @@ export function VolunteerProvider({ children }: { children: React.ReactNode }) {
         throw new Error('프로그램을 삭제할 권한이 없습니다. 관리자 계정으로 로그인해주세요.')
       }
 
-      try {
-        // 프로그램의 썸네일 삭제 (있는 경우)
-        const program = programs.find((p) => p.id === programId)
+      const supabase = getSupabaseClient();
+      
+      // 먼저 프로그램 정보 가져오기 (썸네일 삭제용)
+      setPrograms((prev) => {
+        const program = prev.find((p) => p.id === programId)
         if (program?.thumbnail) {
-          try {
-            // URL에서 파일 경로 추출
-            const urlParts = program.thumbnail.split('/')
-            const filePath = `${programId}/thumbnail.${urlParts[urlParts.length - 1].split('.').pop()}`
-            await supabase.storage.from('program-thumbnails').remove([filePath])
-          } catch (storageError) {
-            console.error('썸네일 삭제 실패:', storageError)
+          // 비동기로 썸네일 삭제 (에러 무시)
+          const urlParts = program.thumbnail.split('/')
+          const filePath = `${programId}/thumbnail.${urlParts[urlParts.length - 1].split('.').pop()}`
+          supabase.storage.from('program-thumbnails').remove([filePath]).catch(() => {
             // 썸네일 삭제 실패해도 계속 진행
-          }
+          })
         }
+        return prev
+      })
 
+      try {
         // Database에서 프로그램 삭제 (is_active를 false로 변경)
         const { error } = await supabase
           .from('programs')
@@ -452,14 +469,14 @@ export function VolunteerProvider({ children }: { children: React.ReactNode }) {
           throw error
         }
 
-        // 프로그램 목록에서 제거
+        // 성공 시에만 목록에서 제거
         setPrograms((prev) => prev.filter((p) => p.id !== programId))
       } catch (error: any) {
         console.error('프로그램 삭제 실패:', error)
         throw error
       }
     },
-    [user, supabase, programs]
+    [user?.id, user?.role]
   )
 
   // 데이터 새로고침 함수
@@ -477,7 +494,7 @@ export function VolunteerProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false)
     }
-  }, [fetchActivities, fetchPrograms])
+  }, [fetchActivities, fetchPrograms]) // fetchActivities와 fetchPrograms는 안정적이므로 의존성 유지
 
   return (
     <VolunteerContext.Provider

@@ -5,6 +5,7 @@ import {
   useContext,
   useState,
   useEffect,
+  useCallback,
   type ReactNode,
 } from "react";
 import { getSupabaseClient } from "./supabase/client";
@@ -36,42 +37,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const supabase = getSupabaseClient();
 
-  // 초기 세션 확인 및 프로필 로드
-  useEffect(() => {
-    async function loadSession() {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session?.user) {
-          await loadProfile(session.user.id);
-        }
-      } catch (error) {
-        console.error('세션 로드 실패:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    loadSession();
-
-    // 인증 상태 변경 리스너
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session?.user) {
-          await loadProfile(session.user.id);
-        } else {
-          setUser(null);
-        }
-      }
-    );
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [supabase]);
-
-  // 프로필 로드 함수
-  async function loadProfile(userId: string) {
+  // 프로필 로드 함수 (useCallback으로 메모이제이션)
+  const loadProfile = useCallback(async (userId: string) => {
+    const supabase = getSupabaseClient();
     try {
       const { data: profile, error } = await supabase
         .from('profiles')
@@ -155,10 +123,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('프로필 로드 중 오류:', error);
     }
-  }
+  }, []);
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  // 초기 세션 확인 및 프로필 로드
+  useEffect(() => {
+    const supabase = getSupabaseClient();
+    let mounted = true;
+
+    async function loadSession() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user && mounted) {
+          await loadProfile(session.user.id);
+        }
+      } catch (error) {
+        console.error('세션 로드 실패:', error);
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadSession();
+
+    // 인증 상태 변경 리스너
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!mounted) return;
+        if (session?.user) {
+          await loadProfile(session.user.id);
+        } else {
+          setUser(null);
+        }
+      }
+    );
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [loadProfile]);
+
+  const login = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
+      const supabase = getSupabaseClient();
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -190,14 +200,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('로그인 중 오류:', error);
       return { success: false, error: error.message || "로그인 중 오류가 발생했습니다." };
     }
-  };
+  }, [loadProfile]);
 
-  const register = async (
+  const register = useCallback(async (
     name: string,
     email: string,
     password: string
   ): Promise<{ success: boolean; error?: string }> => {
     try {
+      const supabase = getSupabaseClient();
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -238,24 +249,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('회원가입 중 오류:', error);
       return { success: false, error: error.message || "회원가입 중 오류가 발생했습니다." };
     }
-  };
+  }, [loadProfile]);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
+      const supabase = getSupabaseClient();
       await supabase.auth.signOut();
       setUser(null);
     } catch (error) {
       console.error('로그아웃 중 오류:', error);
     }
-  };
+  }, []);
 
   // 관리자 권한 부여 함수 (개발용)
-  const makeAdmin = async (): Promise<{ success: boolean; error?: string }> => {
+  const makeAdmin = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
     try {
-      if (!user) {
+      if (!user?.id) {
         return { success: false, error: '로그인이 필요합니다.' };
       }
 
+      const supabase = getSupabaseClient();
       const { error } = await supabase
         .from('profiles')
         .update({ role: 'admin' })
@@ -273,14 +286,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('관리자 권한 부여 중 오류:', error);
       return { success: false, error: error.message || '관리자 권한 부여 중 오류가 발생했습니다.' };
     }
-  };
+  }, [user?.id, loadProfile]);
 
   // 프로필 새로고침 함수
-  const refreshProfile = async () => {
-    if (user) {
+  const refreshProfile = useCallback(async () => {
+    if (user?.id) {
       await loadProfile(user.id);
     }
-  };
+  }, [user?.id, loadProfile]);
 
   return (
     <AuthContext.Provider value={{ user, isLoading, login, register, logout, makeAdmin, refreshProfile }}>
