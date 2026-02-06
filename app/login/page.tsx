@@ -31,24 +31,12 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    const success = await login(email, password);
-    if (success) {
+    const result = await login(email, password);
+    if (result.success) {
       toast.success("로그인 성공!");
       router.push("/");
     } else {
-      toast.error("이메일 또는 비밀번호가 올바르지 않습니다.");
-    }
-    setIsLoading(false);
-  };
-
-  const handleDemoLogin = async () => {
-    setEmail("demo@vhub.kr");
-    setPassword("demo1234");
-    setIsLoading(true);
-    const success = await login("demo@vhub.kr", "demo1234");
-    if (success) {
-      toast.success("데모 계정으로 로그인되었습니다!");
-      router.push("/");
+      toast.error(result.error || "이메일 또는 비밀번호가 올바르지 않습니다.");
     }
     setIsLoading(false);
   };
@@ -111,15 +99,6 @@ export default function LoginPage() {
               ) : (
                 "로그인"
               )}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full bg-transparent"
-              onClick={handleDemoLogin}
-              disabled={isLoading}
-            >
-              데모 계정으로 체험하기
             </Button>
             <p className="text-sm text-muted-foreground text-center">
               계정이 없으신가요?{" "}

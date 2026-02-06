@@ -1,66 +1,170 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import { motion } from "framer-motion"
-import { Users, Heart, ArrowRight, Search } from "lucide-react"
+import { Users, Heart, ArrowRight, Search, Plus, Edit, Trash2, MoreVertical } from "lucide-react"
 import { useVolunteer, type Program } from "@/lib/volunteer-context"
+import { useAuth } from "@/lib/auth-context"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import Link from "next/link"
+import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 
 function ProgramCard({ program, index }: { program: Program; index: number }) {
+  const { deleteProgram } = useVolunteer()
+  const { user } = useAuth()
+  const router = useRouter()
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const isAdmin = user?.role === 'admin'
+
+  const handleDelete = async () => {
+    setIsDeleting(true)
+    try {
+      await deleteProgram(program.id)
+      toast.success("프로그램이 삭제되었습니다.")
+      setShowDeleteDialog(false)
+    } catch (error: any) {
+      console.error("프로그램 삭제 실패:", error)
+      toast.error("프로그램 삭제에 실패했습니다.", {
+        description: error.message || "다시 시도해 주세요.",
+      })
+    } finally {
+      setIsDeleting(false)
+    }
+  }
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: index * 0.1 }}
-    >
-      <Card className="overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1 duration-300 group">
-        <div className="aspect-[4/3] relative overflow-hidden">
-          <img
-            src={program.thumbnail || "/placeholder.svg"}
-            alt={program.name}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-            crossOrigin="anonymous"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-          <div className="absolute bottom-3 left-3 right-3">
-            <h3 className="text-lg font-semibold text-white">{program.name}</h3>
-            <div className="flex items-center gap-2 mt-1">
-              <Badge variant="secondary" className="bg-white/20 text-white backdrop-blur-sm border-0">
-                <Users className="mr-1 h-3 w-3" />
-                {program.activeVolunteers}명 활동 중
-              </Badge>
+    <>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: index * 0.1 }}
+      >
+        <Card className="overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1 duration-300 group relative">
+          {isAdmin && (
+            <div className="absolute top-3 right-3 z-10">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 bg-background/80 backdrop-blur-sm hover:bg-background"
+                    aria-label="프로그램 메뉴"
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild>
+                    <Link href={`/programs/${program.id}/edit`} className="cursor-pointer">
+                      <Edit className="mr-2 h-4 w-4" />
+                      수정
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive cursor-pointer"
+                    onClick={() => setShowDeleteDialog(true)}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    삭제
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
+          <div className="aspect-[4/3] relative overflow-hidden">
+            <Image
+              src={program.thumbnail || "/placeholder.svg"}
+              alt={`${program.name} 프로그램 썸네일`}
+              fill
+              className="object-cover transition-transform duration-500 group-hover:scale-110"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+            <div className="absolute bottom-3 left-3 right-3">
+              <h3 className="text-lg font-semibold text-white">{program.name}</h3>
+              <div className="flex items-center gap-2 mt-1">
+                <Badge variant="secondary" className="bg-white/20 text-white backdrop-blur-sm border-0">
+                  <Users className="mr-1 h-3 w-3" />
+                  {program.activeVolunteers}명 활동 중
+                </Badge>
+              </div>
             </div>
           </div>
-        </div>
-        <CardContent className="p-4">
-          <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-            {program.description}
-          </p>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1 text-primary">
-              <Heart className="h-4 w-4" />
-              <span className="text-sm font-medium">참여하기</span>
+          <CardContent className="p-4">
+            <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+              {program.description}
+            </p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1 text-primary">
+                <Heart className="h-4 w-4" />
+                <span className="text-sm font-medium">참여하기</span>
+              </div>
+              <Button variant="ghost" size="sm" asChild className="group/btn">
+                <Link href="/log">
+                  시간 기록
+                  <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
+                </Link>
+              </Button>
             </div>
-            <Button variant="ghost" size="sm" asChild className="group/btn">
-              <Link href="/log">
-                시간 기록
-                <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
-              </Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>프로그램 삭제</AlertDialogTitle>
+            <AlertDialogDescription>
+              정말로 "{program.name}" 프로그램을 삭제하시겠습니까?
+              <br />
+              이 작업은 되돌릴 수 없습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "삭제 중..." : "삭제"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   )
 }
 
 export default function ProgramsPage() {
   const { programs } = useVolunteer()
+  const { user } = useAuth()
   const [searchQuery, setSearchQuery] = useState("")
+  
+  // Admin 체크: 관리자만 프로그램 생성 가능
+  const canCreateProgram = user?.role === 'admin'
 
   const filteredPrograms = programs.filter(
     (program) =>
@@ -82,12 +186,22 @@ export default function ProgramsPage() {
             다양한 봉사 기회를 발견하고 변화를 만들어 보세요.
           </p>
         </div>
-        <div className="flex items-center gap-2 rounded-xl border bg-card px-4 py-2">
-          <Users className="h-5 w-5 text-primary" />
-          <div>
-            <p className="text-xs text-muted-foreground">전체 활동 인원</p>
-            <p className="text-lg font-semibold">{totalActiveVolunteers}명</p>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 rounded-xl border bg-card px-4 py-2">
+            <Users className="h-5 w-5 text-primary" />
+            <div>
+              <p className="text-xs text-muted-foreground">전체 활동 인원</p>
+              <p className="text-lg font-semibold">{totalActiveVolunteers}명</p>
+            </div>
           </div>
+          {canCreateProgram && (
+            <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
+              <Link href="/programs/create">
+                <Plus className="h-4 w-4 mr-2" />
+                프로그램 생성
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
 
@@ -98,7 +212,12 @@ export default function ProgramsPage() {
           className="pl-10"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
+          aria-label="프로그램 검색"
+          aria-describedby="program-search-description"
         />
+        <span id="program-search-description" className="sr-only">
+          프로그램 이름이나 설명으로 검색할 수 있습니다
+        </span>
       </div>
 
       {filteredPrograms.length === 0 ? (

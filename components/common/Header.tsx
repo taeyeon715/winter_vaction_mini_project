@@ -63,7 +63,7 @@ export function Header() {
             <Heart className="h-5 w-5 text-primary-foreground" />
           </div>
           <div className="flex flex-col">
-            <span className="text-lg font-semibold tracking-tight">각자</span>
+            <span className="text-lg font-semibold tracking-tight">V-Hub</span>
             <span className="text-xs text-muted-foreground hidden sm:block">
               봉사 임팩트 플랫폼
             </span>
@@ -79,13 +79,14 @@ export function Header() {
               <Link
                 key={item.title}
                 href={item.url}
-                className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                   isActive
                     ? "bg-accent text-accent-foreground"
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 }`}
+                aria-current={isActive ? "page" : undefined}
               >
-                <Icon className="h-4 w-4" />
+                <Icon className="h-4 w-4" aria-hidden="true" />
                 <span>{item.title}</span>
               </Link>
             )
@@ -112,8 +113,9 @@ export function Header() {
                 size="sm"
                 onClick={handleLogout}
                 className="hidden sm:flex"
+                aria-label="로그아웃"
               >
-                <LogOut className="mr-2 h-4 w-4" />
+                <LogOut className="mr-2 h-4 w-4" aria-hidden="true" />
                 로그아웃
               </Button>
             </>
@@ -129,8 +131,10 @@ export function Header() {
             size="icon"
             className="md:hidden"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label={isMobileMenuOpen ? "메뉴 닫기" : "메뉴 열기"}
+            aria-expanded={isMobileMenuOpen}
           >
-            <Menu className="h-5 w-5" />
+            <Menu className="h-5 w-5" aria-hidden="true" />
           </Button>
         </div>
       </div>

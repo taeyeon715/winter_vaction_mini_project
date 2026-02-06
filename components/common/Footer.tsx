@@ -16,7 +16,7 @@ export function Footer() {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
                 <Heart className="h-4 w-4 text-primary-foreground" />
               </div>
-              <span className="text-lg font-semibold">각자</span>
+              <span className="text-lg font-semibold">V-Hub</span>
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed">
               봉사 활동의 가치를 실시간 데이터로 증명하고 시각화하는 임팩트 관리 플랫폼

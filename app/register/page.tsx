@@ -43,12 +43,12 @@ export default function RegisterPage() {
     }
 
     setIsLoading(true);
-    const success = await register(name, email, password);
-    if (success) {
+    const result = await register(name, email, password);
+    if (result.success) {
       toast.success("회원가입이 완료되었습니다!");
       router.push("/");
     } else {
-      toast.error("이미 사용 중인 이메일입니다.");
+      toast.error(result.error || "회원가입에 실패했습니다.");
     }
     setIsLoading(false);
   };

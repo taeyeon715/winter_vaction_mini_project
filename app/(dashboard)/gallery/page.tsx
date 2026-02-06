@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { motion } from "framer-motion"
 import { Clock, Heart, Plus, Search } from "lucide-react"
 import { useVolunteer, type Activity } from "@/lib/volunteer-context"
@@ -35,11 +36,13 @@ function ActivityCard({ activity, index }: { activity: Activity; index: number }
     >
       <Card className="overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1 duration-300">
         <div className="aspect-video relative overflow-hidden">
-          <img
+          <Image
             src={activity.imageUrl || "/placeholder.svg"}
-            alt={`Activity by ${activity.volunteerName}`}
-            className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
-            crossOrigin="anonymous"
+            alt={`${activity.volunteerName}님의 ${activity.programName} 활동`}
+            fill
+            className="object-cover transition-transform duration-300 hover:scale-105"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            loading="lazy"
           />
           <div className="absolute top-2 right-2">
             <Badge variant="secondary" className="bg-card/90 backdrop-blur-sm">
@@ -76,14 +79,8 @@ function ActivityCard({ activity, index }: { activity: Activity; index: number }
 }
 
 export default function GalleryPage() {
-  const { activities } = useVolunteer()
-  const [isLoading, setIsLoading] = useState(true)
+  const { activities, isLoading: isContextLoading } = useVolunteer()
   const [searchQuery, setSearchQuery] = useState("")
-
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 800)
-    return () => clearTimeout(timer)
-  }, [])
 
   const filteredActivities = activities.filter(
     (activity) =>
@@ -102,8 +99,8 @@ export default function GalleryPage() {
           </p>
         </div>
         <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
-          <Link href="/log">
-            <Plus className="h-4 w-4 mr-2" />
+          <Link href="/log" aria-label="새 활동 기록하기">
+            <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
             활동 기록
           </Link>
         </Button>
@@ -116,10 +113,15 @@ export default function GalleryPage() {
           className="pl-10"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
+          aria-label="활동 검색"
+          aria-describedby="search-description"
         />
+        <span id="search-description" className="sr-only">
+          봉사자 이름, 프로그램 이름, 활동 내용으로 검색할 수 있습니다
+        </span>
       </div>
 
-      {isLoading ? (
+      {isContextLoading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <ActivityCardSkeleton key={i} />

@@ -1,6 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
+import Image from "next/image"
 import { Clock, Heart } from "lucide-react"
 import { useVolunteer, type Activity } from "@/lib/volunteer-context"
 import { Card, CardContent } from "@/components/ui/card"
@@ -29,11 +30,13 @@ function ActivityCard({ activity, index }: { activity: Activity; index: number }
     >
       <Card className="overflow-hidden transition-shadow hover:shadow-md">
         <div className="aspect-video relative overflow-hidden">
-          <img
+          <Image
             src={activity.imageUrl || "/placeholder.svg"}
-            alt={`Activity by ${activity.volunteerName}`}
-            className="h-full w-full object-cover"
-            crossOrigin="anonymous"
+            alt={`${activity.volunteerName}님의 ${activity.programName} 활동`}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            loading="lazy"
           />
           <div className="absolute top-2 right-2">
             <Badge variant="secondary" className="bg-card/90 backdrop-blur-sm">

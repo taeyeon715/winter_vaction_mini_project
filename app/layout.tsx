@@ -11,7 +11,7 @@ import './globals.css'
 const _inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: '각자 | Volunteer Impact Platform',
+  title: 'V-Hub | Volunteer Impact Platform',
   description: 'Visualize and track volunteer impact in real-time. Manage programs, log activities, and celebrate community contributions.',
   generator: 'v0.app',
   icons: {
